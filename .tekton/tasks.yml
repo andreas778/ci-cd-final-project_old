@@ -1,0 +1,42 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: cleanup
+spec:
+  description: This task performs cleanup operations on the workspace.
+  workspaces:
+    - name: source
+  steps:
+    - name: run-cleanup
+      image: alpine:latest
+      script: |
+        #!/bin/sh
+        echo "Starting workspace cleanup..."
+        # Example cleanup: removing temporary files or clearing the directory
+        rm -rf $(workspaces.source.path)/*
+        echo "Cleanup completed successfully."
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: test
+spec:
+  description: This task installs dependencies and runs unit tests using nose.
+  workspaces:
+    - name: source
+  steps:
+    - name: run-nose-tests
+      image: python:3.9-slim
+      workingDir: $(workspaces.source.path)
+      script: |
+        #!/bin/sh
+        echo "Updating pip..."
+        python -m pip install --upgrade pip
+        
+        echo "Installing nose and dependencies..."
+        pip install nose
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        
+        echo "Executing unit tests..."
+        nosetests -v
